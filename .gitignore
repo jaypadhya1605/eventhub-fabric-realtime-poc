@@ -1,0 +1,27 @@
+# Dependencies
+__pycache__/
+*.pyc
+*.pyo
+
+# Environment files with secrets
+config.env
+.env
+*.env
+!config.env.template
+
+# Connection strings and keys
+*connection-string*
+*secret*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Python virtual environments
+venv/
+.venv/
+env/

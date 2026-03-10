@@ -1,0 +1,112 @@
+// =============================================================================
+// KQL Queries — Exploration & Validation
+// Molina Healthcare — Call Center Real-Time Analytics POC
+// =============================================================================
+// Run these in Fabric Eventhouse > KQL Database > Query Editor
+// =============================================================================
+
+// ---- BASIC VALIDATION ----
+
+// 1. Check if data is flowing — see the latest 10 events
+CallCenterEvents
+| take 10
+| project EventTime, CallType, MemberID, Duration, AgentID, Disposition
+
+// 2. Count total events
+CallCenterEvents
+| count
+
+// 3. See the time range of available data
+CallCenterEvents
+| summarize MinTime = min(EventTime), MaxTime = max(EventTime), TotalEvents = count()
+
+
+// ---- CALL CENTER ANALYTICS ----
+
+// 4. Calls by type in the last hour
+CallCenterEvents
+| where EventTime > ago(1h)
+| summarize Count = count() by CallType
+| order by Count desc
+
+// 5. Average call duration by disposition
+CallCenterEvents
+| where EventTime > ago(24h)
+| summarize AvgDuration = avg(Duration), CallCount = count() by Disposition
+| order by CallCount desc
+
+// 6. Calls by plan type
+CallCenterEvents
+| where EventTime > ago(24h)
+| summarize Count = count() by PlanType
+| order by Count desc
+
+// 7. Top call reasons
+CallCenterEvents
+| where EventTime > ago(24h)
+| summarize Count = count() by CallReason
+| order by Count desc
+| take 10
+
+// 8. Average satisfaction score by disposition
+CallCenterEvents
+| where EventTime > ago(24h)
+| summarize AvgSatisfaction = avg(SatisfactionScore) by Disposition
+| order by AvgSatisfaction asc
+
+// 9. Queue wait time analysis
+CallCenterEvents
+| where EventTime > ago(24h)
+| summarize
+    AvgWait = avg(QueueWaitSeconds),
+    P50Wait = percentile(QueueWaitSeconds, 50),
+    P90Wait = percentile(QueueWaitSeconds, 90),
+    P99Wait = percentile(QueueWaitSeconds, 99)
+
+// 10. Hourly call volume trend
+CallCenterEvents
+| where EventTime > ago(7d)
+| summarize CallCount = count() by bin(EventTime, 1h)
+| render timechart
+
+
+// ---- MEMBER-LEVEL QUERIES ----
+
+// 11. Members with the most calls (potential high-touch members)
+CallCenterEvents
+| where EventTime > ago(7d)
+| summarize CallCount = count(), AvgDuration = avg(Duration) by MemberID
+| where CallCount > 3
+| order by CallCount desc
+| take 20
+
+// 12. Member call journey (specific member)
+// Replace M-123456 with an actual MemberID from your data
+CallCenterEvents
+| where MemberID == "M-123456"
+| order by EventTime desc
+| project EventTime, CallType, CallReason, Disposition, Duration, AgentID
+
+
+// ---- AGENT PERFORMANCE ----
+
+// 13. Agent performance — average handle time and satisfaction
+CallCenterEvents
+| where EventTime > ago(24h)
+| summarize
+    CallCount = count(),
+    AvgDuration = avg(Duration),
+    AvgSatisfaction = avg(SatisfactionScore)
+    by AgentID
+| order by CallCount desc
+| take 20
+
+
+// ---- STREAMING + HISTORICAL JOIN (requires Lakehouse shortcut) ----
+
+// 14. Join live call events with historical member dimension
+// NOTE: This only works after creating a shortcut from Eventhouse to Lakehouse
+// CallCenterEvents
+// | where EventTime > ago(1h)
+// | join kind=inner (MemberDimension) on MemberID
+// | project EventTime, MemberID, MemberName, CallType, PlanType, CallReason

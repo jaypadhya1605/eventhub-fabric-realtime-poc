@@ -1,0 +1,93 @@
+// =============================================================================
+// KQL Queries for Real-Time Dashboard Tiles
+// Molina Healthcare — Call Center Real-Time Analytics POC
+// =============================================================================
+// Use these queries when adding tiles to your RTI dashboard in Fabric.
+// Each query is designed for a specific visualization type.
+// =============================================================================
+
+
+// ---- TILE 1: Active Calls (Last Hour) ----
+// Visualization: Stat / Number Card
+// Shows the count of calls received in the last hour
+CallCenterEvents
+| where EventTime > ago(1h)
+| count
+
+
+// ---- TILE 2: Calls by Disposition ----
+// Visualization: Pie Chart
+// Breakdown of call outcomes in the last 24 hours
+CallCenterEvents
+| where EventTime > ago(24h)
+| summarize Count = count() by Disposition
+| render piechart
+
+
+// ---- TILE 3: Average Handle Time Trend ----
+// Visualization: Time Chart / Line Chart
+// Hourly average call duration over the last 7 days
+CallCenterEvents
+| where EventTime > ago(7d)
+| summarize AvgDuration = avg(Duration) by bin(EventTime, 1h)
+| render timechart
+
+
+// ---- TILE 4: Call Volume by Hour ----
+// Visualization: Bar Chart
+// Hourly call count for the last 24 hours
+CallCenterEvents
+| where EventTime > ago(24h)
+| summarize CallCount = count() by bin(EventTime, 1h)
+| render barchart
+
+
+// ---- TILE 5: Calls by Plan Type ----
+// Visualization: Pie Chart or Donut Chart
+// Distribution of calls across plan types
+CallCenterEvents
+| where EventTime > ago(24h)
+| summarize Count = count() by PlanType
+| render piechart
+
+
+// ---- TILE 6: Top Call Reasons ----
+// Visualization: Bar Chart (horizontal)
+// Most common reasons members are calling
+CallCenterEvents
+| where EventTime > ago(24h)
+| summarize Count = count() by CallReason
+| order by Count desc
+| take 10
+| render barchart
+
+
+// ---- TILE 7: Average Satisfaction Score ----
+// Visualization: Stat / Gauge
+// Overall satisfaction score for the last 24 hours
+CallCenterEvents
+| where EventTime > ago(24h)
+| summarize AvgSatisfaction = round(avg(SatisfactionScore), 1)
+
+
+// ---- TILE 8: Queue Wait Time (P50 vs P90) ----
+// Visualization: Multi-stat or Table
+// Median and 90th percentile wait times
+CallCenterEvents
+| where EventTime > ago(24h)
+| summarize
+    MedianWait = percentile(QueueWaitSeconds, 50),
+    P90Wait = percentile(QueueWaitSeconds, 90)
+
+
+// ---- TILE 9: Abandoned vs Resolved Rate ----
+// Visualization: Stacked Bar or Stat
+// Track abandonment rate over time
+CallCenterEvents
+| where EventTime > ago(24h)
+| summarize
+    Resolved = countif(Disposition == "Resolved"),
+    Abandoned = countif(Disposition == "Abandoned"),
+    Total = count()
+| extend ResolvedRate = round(100.0 * Resolved / Total, 1),
+         AbandonedRate = round(100.0 * Abandoned / Total, 1)
