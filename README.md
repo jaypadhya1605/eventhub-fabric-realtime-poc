@@ -327,4 +327,4 @@ This project is provided as a POC accelerator. See [LICENSE](LICENSE) for detail
 
 ## Contributing
 
-For questions or feedback, contact [Jay Padhya](https://github.com/jaypadhyamsft) | Microsoft Health & Life Sciences.
+For questions or feedback, contact [Jay Padhya](https://github.com/jaypadhya1605) | Microsoft Health & Life Sciences.
